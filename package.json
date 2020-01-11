@@ -1,0 +1,24 @@
+{
+  "name": "gasmon",
+  "version": "1.0.0",
+  "description": "Monitors Gas costs in the Ethereum blockchain",
+  "main": "gasmon.js",
+  "scripts": {
+    "test": "echo \"No test specified\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daniportugalgit/gasmon.git"
+  },
+  "keywords": [
+    "Ethereum",
+    "Gas",
+    "Web3"
+  ],
+  "author": "Daniel Portugal",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/daniportugalgit/gasmon/issues"
+  },
+  "homepage": "https://github.com/daniportugalgit/gasmon#readme"
+}
