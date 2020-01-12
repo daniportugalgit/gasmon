@@ -1,49 +1,21 @@
 /**
  * @author Daniel Portugal daniportugal@gmail.com
  * 
- * Gasmon monitors the current gas prices on the Ethereum blockchain.
- * It periodically consumes Ethgasstation's API to get the four basic speeds ("safeLow", "average", "fast" and "fastest"),
- * and their corresponding gas prices.
- * Gasmon provides you with the optimal value in WEI or GWEI for the desired speed, at any given moment.
- *
- * Usage:
- * Import it with const Gasmon = require('./gasmon.js'); // or import Gasmon from 'gasmon';
- * Initialize it with Gasmon.init();
- * Access the current gas costs with Gasmon.idealGasPrice(speed);
- *
- * More details:
- * Initialize it with Gasmon.init(callbackFunction,checkIntervalInMinutes,suppressLogs).
- * All parameters are optional.
- * If you pass a callbackFunction, it will be called whenever the costs change in the network (and once as soon as it initializes).
- * If you omit checkIntervalInMinutes, it defaults to 3.
- * If you omit suppressLogs, it defaults to false and you will see a console.log whenever speeds change.
- * 
- * Access the current gas costs with Gasmon.idealGasPrice(speed), 
- * where speed is an integer from 1 to 4, representing the four available speeds.
- * Example: Gasmon.idealGasPrice(3) will return the value in WEI necessary to make a "fast" transaction at the moment.
- * You can also use Gasmon.idealGasPriceInGwei(speed) to get the value in GWEI.
- *
- * If you omit the value `speed` when calling theses functions, the system will use the currently selected speed (defaults to 2).
- * To cycle the selection between the available speeds, call Gasmon.nextSpeed();
- *
- * Consult what's the current speed by calling Gasmon.currentSpeed(); It returns an integer from 1 to 4.
- *
- * Get an array with the GWEI costs for the four speeds by calling Gasmon.speeds();
- * It will return something like [1,3,10,18] meaning that to make a "safeLow" transaction you will pay 1 GWEI per gas unit;
- * (an "average" transaction would cost 3 GWEI per gas, and so forth).
- *
- * REQUIREMENTS: jQuery, which is used for $.get()
+ * Gasmon monitors the current gas prices on the Ethereum blockchain and provides you
+ * with the optimal value in WEI or GWEI for the desired speed, at any given moment.
 **/
 
 const defaultIntervalInMinutes = 3; //how many minutes between each price refresh
 const defaultSpeed = 2; //index of speed[] (2 corresponds to "average" gas price)
 const gasStationUrl = "https://ethgasstation.info/json/ethgasAPI.json";
 
-var _currentSpeed = defaultSpeed; //index of speed[]
-var _speed = [0, 1, 5, 10, 20]; //unused, safeLow, average, fast, fastest (default values)
+var _speeds = [{ gwei:1, wait:7.1 }, { gwei:5, wait:3.5 }, { gwei:10, wait:0.5 }, { gwei:20, wait:0.5 }];
+var _currentSpeed = defaultSpeed; //index of _speed[]
 var _onNewSpeedCallback; //function to be called when new speed limits are received
-
 var _suppressLogs;
+
+var _optimized = true;
+var _details;
 /**
  * Initializes the system
  * @param onNewSpeedsFunction {function} the callback function for whenever new speeds are detected.
@@ -53,7 +25,7 @@ var _suppressLogs;
 function init(onNewSpeedsFunction, checkIntervalInMinutes, suppressLogs) {
   _suppressLogs = suppressLogs;
 
-  if(!_suppressLogs) console.log("Gasmon :: initializing...");
+  if(!_suppressLogs) console.log("Gasmon :: initializing. Optimization is active.");
 
   _onNewSpeedCallback = onNewSpeedsFunction;
 
@@ -71,19 +43,26 @@ function estimateGasCost() {
 }
 
 function onGasPricesReceived(response) {
-  let newSpeed1 = Math.ceil(response.safeLow / 10);
-  let newSpeed2 = Math.ceil(response.average / 10);
-  let newSpeed3 = Math.ceil(response.fast / 10);
-  let newSpeed4 = Math.ceil(response.fastest / 10);
+  _details = response;
 
-  if(_speed[1] != newSpeed1 || _speed[2] != newSpeed2 || _speed[3] != newSpeed3 || _speed[4] != newSpeed4)
+  let newSpeed1 = { gwei: response.safeLow / 10, wait: response.safeLowWait };
+  let newSpeed2 = { gwei: response.average / 10, wait: response.avgWait };
+  let newSpeed3 = { gwei: response.fast / 10, wait: response.fastWait };
+  let newSpeed4 = { gwei: response.fastest / 10, wait: response.fastestWait };
+
+  if(_optimized) {
+    if(newSpeed4.wait == newSpeed3.wait)
+      newSpeed4 = newSpeed3;
+  }
+
+  if(_speeds[0].gwei != newSpeed1.gwei || _speeds[1].gwei != newSpeed2.gwei || _speeds[2].gwei != newSpeed3.gwei || _speeds[3].gwei != newSpeed4.gwei)
   {
-      if(!_suppressLogs) console.log("Gasmon :: New speed limits: " + newSpeed1 + " | " + newSpeed2 + " | " + newSpeed3 + " | " + newSpeed4);    
+      if(!_suppressLogs) console.log("Gasmon :: New speed limits: " + newSpeed1.gwei + " | " + newSpeed2.gwei + " | " + newSpeed3.gwei + " | " + newSpeed4.gwei);    
 
-      _speed[1] = newSpeed1;
-      _speed[2] = newSpeed2;
-      _speed[3] = newSpeed3;
-      _speed[4] = newSpeed4;
+      _speeds[0] = newSpeed1;
+      _speeds[1] = newSpeed2;
+      _speeds[2] = newSpeed3;
+      _speeds[3] = newSpeed4;
 
       if(_onNewSpeedCallback)
         _onNewSpeedCallback();
@@ -99,16 +78,21 @@ function currentSpeed() {
 }
 
 /**
+ * Returns the estimated waiting time for the currently selected speed
+ * @return {number} the waiting time in seconds
+ */
+function currentWait() {
+  return _speeds[_currentSpeed-1].wait;
+}
+
+/**
  * Returns a value in WEI corresponding to the chosen speed 
  * @param speed {number} the desired speed (a value from 1 to 4)
- * @return value {number} value in WEI corresponding to the chosen speed 
+ * @return {number} value in WEI corresponding to the chosen speed 
  * @notice Omit the param speed to use the current speed
  */
 function idealGasPrice(speed) {
-  if(!speed)
-    return _speed[_currentSpeed] * 1000000000;
-
-  return _speed[speed] * 1000000000;
+  return idealGasPriceInGwei(speed) * 1000000000;
 }
 
 /**
@@ -119,9 +103,9 @@ function idealGasPrice(speed) {
  */
 function idealGasPriceInGwei(speed) {
   if(!speed)
-    return _speed[_currentSpeed];
+    speed = _currentSpeed;
 
-  return _speed[speed];  
+  return _speeds[speed-1].gwei;  
 }
 
 /**
@@ -129,8 +113,7 @@ function idealGasPriceInGwei(speed) {
  * @return {number} a value from 1 to 4
  */
 function nextSpeed() {
-  let nextIndex = (_currentSpeed+1) % 5;
-  if(nextIndex == 0) { nextIndex = 1 }
+  let nextIndex = (_currentSpeed+1) % 4;
 
   setSpeed(nextIndex);
   
@@ -155,12 +138,33 @@ function setSpeed(speed) {
 
 /**
  * Gets the costs in GWEI for all available speeds
- * @return {array} the costs in GWEI for each speed; something like [1,3,10,18].
+ * @return {array} the costs for each speed (in GWEI) and their waiting times (in seconds)
+ * Something like [{gwei:1,wait:7},{gwei:3,wait:3.4},{gwei:10,wait:1},{gwei:20,wait:0.5}].
  */
 function speeds() {
-  let trimmedSpeeds = _speed.slice(0);
-  trimmedSpeeds.shift();
-  return trimmedSpeeds;
+  return _speeds;
+}
+
+/**
+ * Sets the optimization (true or false). When optimized == true, the system will check wheter the speed you're asking for
+ * can be achieved by paying even less. That happens, for example, when the "fastest" speed has the same waiting time than
+ * the "fast" speed. In that case, the system will use the speed "fast" even if you ask for "fastest".
+ * @param {bool} trueOrFalse wheter the system should work optimized (true) or not (false).
+ * @notice The default value is true
+ */
+function optimized(trueOrFalse) {
+  _optimized = trueOrFalse;
+  if(!_suppressLogs) console.log("Gasmon :: optimized: " + _optimized);
+}
+
+/**
+ * Returns the last response received from Eth Gas Station.
+ * @return {object} the last response gotten from Eth Gas Station's API
+ * Something like:
+ * {"fast": 80.0, "fastest": 350.0, "safeLow": 10.0, "average": 10.0, "block_time": 15.652173913043478, "blockNum": 9262855, "speed": 0.5371790597818887, "safeLowWait": 3.2, "avgWait": 3.2, "fastWait": 0.5, "fastestWait": 0.5, "gasPriceRange": {"350": 0.5, "330": 0.5, "310": 0.5, "290": 0.5, "270": 0.5, "250": 0.5, "230": 0.5, "210": 0.5, "190": 0.5, "180": 0.5, "170": 0.5, "160": 0.5, "150": 0.5, "140": 0.5, "130": 0.5, "120": 0.5, "110": 0.5, "100": 0.5, "90": 0.5, "80": 0.5, "70": 0.7, "60": 1.0, "50": 1.0, "40": 2.1, "30": 2.7, "20": 2.7, "10": 3.2, "8": 260.9, "6": 260.9, "4": 260.9}}
+ */
+function details() {
+  return _details;
 }
 
 module.exports = {
@@ -170,5 +174,7 @@ module.exports = {
   idealGasPriceInGwei,
   nextSpeed,
   setSpeed,
-  speeds
+  speeds,
+  optimized,
+  details
 };
