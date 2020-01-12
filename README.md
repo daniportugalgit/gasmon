@@ -24,7 +24,6 @@ _Example inside a transaction call:_
         .then(function(receipt){
             onResult(receipt);
         });
-   
 
 ## Motivation
 Sometimes you want to pay **as low as you can** for a tx, but you're afraid _it might get stuck_.
@@ -52,6 +51,7 @@ No more worries, no more overspending.
 * `Gasmon.setSpeed(speed)` changes the default speed to `speed` (an integer from 1 to 4).
 * `Gasmon.nextSpeed()` cycles the default speed between the available speeds.
 * `Gasmon.currentSpeed()` consults what's the default speed. It returns an integer from 1 to 4.
+* `Gasmon.currentWait()` returns the estimated waiting time in minutes for the default speed.
 * `Gasmon.optimized(false)` deactivates optimization (active by default). When optimized, the system will check whether a given speed can be achieved by paying even less. That happens, for example, when the "fastest" speed has the same waiting time than the "fast" speed. In that case, the system will automatically use the "fast" speed costs for the "fastest" speed.
 _It's unclear why Eth Gas Station's waiting times for "fast" and "fastest" speeds sometimes coincide while having different costs, but they eventually do. By having optimization active you don't have to worry about that. Gasmon will select the lowest possible cost for the "fastest" speed._
 * `Gasmon.speeds()` returns an array with the GWEI costs for the four speeds and their respective waiting times in minutes. It will return an array like this:
