@@ -36,10 +36,15 @@ function init(onNewSpeedsFunction, checkIntervalInMinutes, suppressLogs) {
 }
 
 function estimateGasCost() {
-  $.get(gasStationUrl, function(data, status){
-    if(status == "success")
-      onGasPricesReceived(data);
-  });
+  fetch(gasStationUrl)
+    .then(function(response){
+      response.json().then(function(data){
+        onGasPricesReceived(data);
+      });
+    })
+    .catch(function(e){ 
+      console.error('Gasmon :: Failed retrieving information: ', e.message);
+    });
 }
 
 function onGasPricesReceived(response) {

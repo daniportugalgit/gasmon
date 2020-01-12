@@ -9,15 +9,16 @@ It periodically consumes Eth Gas Station's API to get the four basic speeds ("sa
 
 Gasmon provides you with the optimal Gas price for the desired speed, at any given moment.
 
-**REQUIREMENTS**: jQuery, which is used for $.get()
-
 ## Usage
 1) **Install** it with `npm install gasmon`
 2) **Import** it in your project with `import Gasmon from 'gasmon';`
 3) **Initialize** it with `Gasmon.init();`
-4) Access the ideal Gas price with `Gasmon.idealGasPrice(speed)`, where `speed` is an integer from 1 to 4, representing the speeds "SafeLow", "Average", "Fast" and "Fastest". Omit `speed` to use the default speed (2).
+4) Define the default speed with `Gasmon.setSpeed(speed)`, where `speed` is an integer from 1 to 4, representing the speeds "SafeLow", "Average", "Fast" and "Fastest".
+5) Get the ideal Gas price for the default speed with `Gasmon.idealGasPrice()`
 
-_Example:_ `Gasmon.idealGasPrice(3)` will return the gasPrice necessary to make a "fast" transaction at the moment.
+_Example:_ `Gasmon.setSpeed(3)`, then `Gasmon.idealGasPrice()` will return the gasPrice necessary to make a "fast" transaction at the moment.
+
+As an alternative, you can ask directly for the speed you want by calling `Gasmon.idealGasPrice(3)`
 
 _Example inside a transaction call:_
 
