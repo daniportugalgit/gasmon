@@ -48,7 +48,7 @@ No more worries, no more overspending.
  * Access the ideal Gas price with `Gasmon.idealGasPrice(speed)`, where `speed` is an integer from 1 to 4, representing the four available speeds.
  
 * You can also use `Gasmon.idealGasPriceInGwei(speed)` to get the value in GWEI.
-* If you omit the value `speed` when calling theses functions, the system will use the default speed (2).
+* If you omit the value `speed` when calling these functions, the system will use the default speed (2).
 * `Gasmon.setSpeed(speed)` changes the default speed to `speed` (an integer from 1 to 4).
 * `Gasmon.nextSpeed()` cycles the default speed between the available speeds.
 * `Gasmon.currentSpeed()` consults what's the default speed. It returns an integer from 1 to 4.
