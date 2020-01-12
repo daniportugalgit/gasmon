@@ -3,8 +3,9 @@
 
 # Gasmon
 Gasmon monitors the current Gas prices on the Ethereum blockchain.
+It allows you to **select a speed for your transactions** based on the data provided by Eth Gas Station (https://ethgasstation.info/), instead of setting gasPrice manually.
 
-It periodically consumes [Eth Gas Station](https://Ethgasstation.info/gasrecs.php)'s API to get the four basic speeds ("safeLow", "average", "fast" and "fastest"), their corresponding Gas prices and estimated waiting times.
+It periodically consumes Eth Gas Station's API to get the four basic speeds ("safeLow", "average", "fast" and "fastest"), their corresponding Gas prices and estimated waiting times.
 
 Gasmon provides you with the optimal Gas price for the desired speed, at any given moment.
 
