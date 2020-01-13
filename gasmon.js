@@ -6,11 +6,11 @@
 **/
 
 const defaultIntervalInMinutes = 3; //how many minutes between each price refresh
-const defaultSpeed = 2; //index of speed[] (2 corresponds to "average" gas price)
+const defaultSpeed = 2; //corresponds to "average" speed
 const gasStationUrl = "https://ethgasstation.info/json/ethgasAPI.json";
 
-var _speeds = [{ gwei:1, wait:7.1 }, { gwei:5, wait:3.5 }, { gwei:10, wait:0.5 }, { gwei:20, wait:0.5 }];
-var _currentSpeed = defaultSpeed; //index of _speed[]
+var _speeds = [{ gwei:1, wait:10 }, { gwei:3, wait:5 }, { gwei:10, wait:1 }, { gwei:20, wait:0.5 }];
+var _currentSpeed = defaultSpeed;
 var _onNewSpeedCallback; //function to be called when new speed limits are received
 var _suppressLogs;
 
@@ -118,9 +118,9 @@ function idealGasPriceInGwei(speed) {
  * @return {number} a value from 1 to 4
  */
 function nextSpeed() {
-  let nextIndex = (_currentSpeed+1) % 4;
+  let nextIndex = _currentSpeed % 4;
 
-  setSpeed(nextIndex);
+  setSpeed(nextIndex+1);
   
   return _currentSpeed;
 }
@@ -136,7 +136,7 @@ function setSpeed(speed) {
 
   _currentSpeed = speed;
 
-  if(!_suppressLogs) console.log("Gasmon :: Default speed set to " + _currentSpeed + ".");
+  if(!_suppressLogs) console.log("Gasmon :: Default speed set to " + _currentSpeed + " (" + idealGasPriceInGwei() + " gwei)");
 
   return true;
 }

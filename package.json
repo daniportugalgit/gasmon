@@ -1,6 +1,6 @@
 {
   "name": "gasmon",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "description": "Monitors Gas costs on the Ethereum blockchain",
   "main": "gasmon.js",
   "scripts": {
